@@ -1,10 +1,12 @@
+"""Data loading utilities for GPT-2 training."""
+
 from torch.utils.data import DataLoader, Dataset
-import os
-import urllib.request
-import tiktoken
 import torch
 
+
 class GPT2Dataset(Dataset):
+	"""Dataset for GPT-2 training with sliding window approach."""
+	
 	def __init__(self, text, tokenizer, context_length, stride):
 		self.input_ids = []
 		self.target_ids = []
@@ -24,7 +26,9 @@ class GPT2Dataset(Dataset):
 		return self.input_ids[idx], self.target_ids[idx]
 
 
-def create_data_loader(text, tokenizer, context_length, stride, batch_size, shuffle=True, drop_last=True, num_workers=0):
+def create_data_loader(text, tokenizer, context_length, stride, batch_size, 
+                       shuffle=True, drop_last=True, num_workers=0):
+	"""Create a PyTorch DataLoader for GPT-2 training."""
 	dataset = GPT2Dataset(text, tokenizer, context_length, stride)
 
 	dataloader = DataLoader(
@@ -35,31 +39,4 @@ def create_data_loader(text, tokenizer, context_length, stride, batch_size, shuf
 		num_workers=num_workers
 	)
 
-	return dataloader
-
-if not os.path.exists("verdict.txt"):
-  url = ("https://raw.githubusercontent.com/rasbt/"
-           "LLMs-from-scratch/main/ch02/01_main-chapter-code/"
-           "the-verdict.txt")
-  filename = "verdict.txt"
-  urllib.request.urlretrieve(url, filename)
-
-with open("verdict.txt", "r") as f:
-	text = f.read()
-
-tokenizer = tiktoken.get_encoding("gpt2")
-
-loader = create_data_loader(
-	text,
-	tokenizer,
-	context_length=4,
-	stride=4,
-	batch_size=4,
-	shuffle=True,
-	drop_last=True,
-	num_workers=0
-)
-
-iterator = iter(loader)
-
-print(next(iterator))
+	return dataloader 

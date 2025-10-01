@@ -1,13 +1,19 @@
+"""Causal self-attention mechanism """
+
 import torch
 import torch.nn as nn
 
+
 class CausalAttention(nn.Module):
+	"""
+	Causal self-attention with masking to prevent attending to future tokens.
+	"""
+	
 	def __init__(self, din, dout, dropout, context_length, qkv_bias=False):
 		super().__init__()
 		self.W_Query = nn.Linear(din, dout, bias=qkv_bias)
 		self.W_Key = nn.Linear(din, dout, bias=qkv_bias)
 		self.W_Value = nn.Linear(din, dout, bias=qkv_bias)
-
 		# this is to randomly drop some more of tokens during training to avoid overfitting
 		self.dropout_layer = nn.Dropout(dropout)
 
@@ -23,8 +29,6 @@ class CausalAttention(nn.Module):
 		values = self.W_Value(x)
 
 		attention_scores = queries @ keys.transpose(1,2)
-
-		print(attention_scores)
 
 		""" Masked Attention (Causal Masking)
 
@@ -70,63 +74,13 @@ class CausalAttention(nn.Module):
 		
 		This is to make sure all future tokens are masked. since we created a mask of upper triangula matrix so all future is masked
 		"""
+
+		# Apply causal masking: prevent attending to future tokens
 		attention_scores.masked_fill_(self.mask.bool()[:context_length, :context_length], -torch.inf)
 
-		print(attention_scores)
-
-		# now do the softmax so all -inf will get softmax 0, so not seeing future
 		attention_weights = torch.softmax(attention_scores, dim=1)
-
-		print(attention_weights)
-
-		# finally randomly drop some more tokens from past also
 		attention_weights = self.dropout_layer(attention_weights)
 
-		print(attention_weights)
-
-
-		# get the context vectors which are more informed
 		context_vectors = attention_weights @ values
 
-		return context_vectors
-
-def main():
-	text = "The weather is bad"
-	token_ids = [0,1,2,3]
-
-	vocab = {
-		0: "The",
-		1: "Weather",
-		2: "is",
-		3: "bad"
-	}
-
-	config = {
-		"vocab_size": 4,
-		"emb_dim": 3,
-		"context_length": 4,
-		"dropout": 0.5
-	}
-
-	emb_layer = torch.nn.Embedding(config["vocab_size"], config["emb_dim"])
-	positional_layer = torch.nn.Embedding(config["context_length"], config["emb_dim"])
-
-	token_embeddings = emb_layer(torch.tensor(token_ids))
-	positional_embeddings = positional_layer(torch.arange(config["context_length"]))
-
-	input_embeddings = token_embeddings + positional_embeddings
-
-	causal_v1 = CausalAttention(
-		din=config["emb_dim"], 
-		dout=4, 
-		dropout=config["dropout"], 
-		context_length=config["context_length"], 
-		qkv_bias=True
-	)
-	context_vectors = causal_v1(input_embeddings.unsqueeze(0))
-	print(context_vectors)
-
-main()
-
-
-
+		return context_vectors 
