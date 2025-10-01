@@ -52,8 +52,8 @@ llm-from-scratch-gpt2/
 
 1. Clone the repository:
 ```bash
-git clone <your-repo-url>
-cd llm-from-scratch-gpt2
+git clone git@github.com:vivek12345/gpt2-from-scratch.git
+cd gpt2-from-scratch
 ```
 
 2. Install dependencies (using uv or pip):
